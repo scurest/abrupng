@@ -15,11 +15,11 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R
     loop {
         let mut buf = [0; 4];
         try!(rdr.read_exact(&mut buf));
-        if buf == ['8' as u8, 'b' as u8, 'i' as u8, 'm' as u8] {
+        if buf == &b"8bim"[..] {
             return Err(OpenError::Found8bim);
         }
         try!(rdr.read_exact(&mut buf));
-        if buf == ['s' as u8, 'a' as u8, 'm' as u8, 'p' as u8] {
+        if buf == &b"samp"[..] {
             break;
         }
         let len = try!(rdr.read_u32::<BigEndian>());
