@@ -1,5 +1,8 @@
 // Extracts brushes from Adobe ABR files as PNGs. Based on gimpbrush-load.c
 // from GIMP.
+
+use std::io::stderr;
+use std::io::Write;
 use std::fs::File;
 use std::path::Path;
 
@@ -37,7 +40,7 @@ fn main2() -> i32 {
     match result {
         Ok(()) => 0,
         Err(e) => {
-            err::print_error_msg(e);
+            writeln!(stderr(), "error: {}", e).unwrap();
             1
         }
     }
@@ -73,7 +76,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
                 println!("Wrote {}.", save_path.display());
             }
             Err(e) => {
-                err::print_save_brush_error_msg(idx, e);
+                writeln!(stderr(), "error saving brush #{}: {}", idx, e).unwrap();
             }
         }
     }

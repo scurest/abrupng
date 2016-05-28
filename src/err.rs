@@ -1,12 +1,16 @@
+use std::error;
+use std::fmt;
 use std::io;
 use std::path::PathBuf;
 use abr;
 
+#[derive(Debug)]
 pub enum SaveBrushError {
     AbrBrushError(abr::BrushError),
     SavePngError(io::Error),
 }
 
+#[derive(Debug)]
 pub enum Error {
     BadCommandlineOptions,
     WrongNumberOfInputFiles(usize),
@@ -22,56 +26,6 @@ pub enum Error {
     },
 }
 
-macro_rules! println_err {
-    ($($arg:tt)*) => (
-        {
-            use std::io::prelude::*;
-            if let Err(e) = write!(&mut ::std::io::stderr(), "{}\n", format_args!($($arg)*)) {
-                panic!("Failed to write to stderr.\
-                    \nOriginal error output: {}\
-                    \nSecondary error writing to stderr: {}", format!($($arg)*), e);
-            }
-        }
-    )
-}
-
-pub fn print_error_msg(err: Error) {
-    match err {
-        Error::BadCommandlineOptions => {
-            println_err!("Err: Unexpected command-line option. Use -h for help.");
-        }
-        Error::WrongNumberOfInputFiles(num) => {
-            println_err!("Err: Expected exactly one input file, but got {}.", num);
-        }
-        Error::CouldntOpenFile {file_path, err} => {
-            println_err!("Err: Couldn't open file {}. {}", file_path.display(), err);
-        }
-        Error::CouldntOpenAbr(e) => {
-            println_err!("Err: Couldn't open file as ABR (is it an ABR?): {}", e);
-        }
-        Error::CouldntGuessOutputName => {
-            println_err!("Err: Couldn't guess an output directory from the input, please supply \
-                          one explicitly with -o.");
-        }
-        Error::CouldntCreateOutputDir {output_path, err} => {
-            println_err!("Err: Couldn't create output directory {}. {}",
-                         output_path.display(),
-                         err);
-        }
-    }
-}
-
-pub fn print_save_brush_error_msg(idx: usize, err: SaveBrushError) {
-    match err {
-        SaveBrushError::AbrBrushError(e) => {
-            println_err!("Failed to read brush #{}. {}", idx, e);
-        }
-        SaveBrushError::SavePngError(e) => {
-            println_err!("Failed to write brush #{}. {}", idx, e);
-        }
-    }
-}
-
 impl From<abr::BrushError> for SaveBrushError {
     fn from(e: abr::BrushError) -> SaveBrushError {
         SaveBrushError::AbrBrushError(e)
@@ -81,5 +35,82 @@ impl From<abr::BrushError> for SaveBrushError {
 impl From<io::Error> for SaveBrushError {
     fn from(e: io::Error) -> SaveBrushError {
         SaveBrushError::SavePngError(e)
+    }
+}
+
+impl fmt::Display for SaveBrushError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SaveBrushError::AbrBrushError(ref e) => write!(f, "Error reading brush: {}", *e),
+            SaveBrushError::SavePngError(ref e) => write!(f, "Failed to save PNG: {}", *e),
+        }
+    }
+}
+
+impl error::Error for SaveBrushError {
+    fn description(&self) -> &str {
+        match *self {
+            SaveBrushError::AbrBrushError(_) => "Error reading brush",
+            SaveBrushError::SavePngError(_) => "Failed to save PNG",
+        }
+    }
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            SaveBrushError::AbrBrushError(ref e) => Some(e),
+            SaveBrushError::SavePngError(ref e) => Some(e),
+        }
+    }
+}
+
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::BadCommandlineOptions => {
+                write!(f, "Unexpected command-line option. Use -h for help.")
+            }
+            Error::WrongNumberOfInputFiles(num) => {
+                write!(f, "Expected exactly one input file, but got {}.", num)
+            }
+            Error::CouldntOpenFile {ref file_path, ref err} => {
+                write!(f, "Couldn't open file {}. {}", file_path.display(), *err)
+            }
+            Error::CouldntOpenAbr(ref e) => {
+                write!(f, "Couldn't open file as ABR (is it an ABR?): {}", *e)
+            }
+            Error::CouldntGuessOutputName => {
+                // TODO: Can this actually happen?
+                write!(f,
+                       "Couldn't guess an output directory from the input, please supply one \
+                        explicitly with -o.")
+            }
+            Error::CouldntCreateOutputDir {ref output_path, ref err} => {
+                write!(f,
+                       "Couldn't create output directory {}. {}",
+                       output_path.display(),
+                       *err)
+            }
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::BadCommandlineOptions => "unexpected command-line option",
+            Error::WrongNumberOfInputFiles(_) => "expected exactly one input file",
+            Error::CouldntOpenFile {..} => "couldn't open file",
+            Error::CouldntOpenAbr(_) => "couldn't open file as ABR",
+            Error::CouldntGuessOutputName => "couldn't guess an output directory from the input",
+            Error::CouldntCreateOutputDir {..} => "couldn't create output directory",
+        }
+    }
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::CouldntOpenFile {ref err, ..} => Some(err),
+            Error::CouldntOpenAbr(ref e) => Some(e),
+            Error::CouldntCreateOutputDir {ref err, ..} => Some(err),
+            _ => None,
+        }
     }
 }
