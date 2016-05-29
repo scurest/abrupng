@@ -15,7 +15,7 @@ mod cli;
 
 use err::{Error, SaveBrushError};
 
-// `main` is a wrapper for the C-style main function, `main2`. This let's us
+// `main` is a wrapper for the C-style main function, `main2`. This lets us
 // unwind the stack before we die from calling `process::exit`.
 
 fn main() {

@@ -44,7 +44,7 @@ pub fn parse_cli_options(opts: &Options) -> Result<Command, Error> {
     });
 
     // Get the output directory's path. If one isn't given, try to guess one
-    // from the stem of the input file (ex. mybruses.abr => ./mybrushes).
+    // from the stem of the input file (ex. mybrushes.abr => ./mybrushes).
     let output_path = match matches.opt_str("o") {
         Some(s) => PathBuf::from(s),
         None => {
