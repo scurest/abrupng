@@ -1,8 +1,8 @@
+use abr;
 use std::error;
 use std::fmt;
 use std::io;
 use std::path::PathBuf;
-use abr;
 
 #[derive(Debug)]
 pub enum SaveBrushError {
@@ -72,7 +72,7 @@ impl fmt::Display for Error {
             Error::WrongNumberOfInputFiles(num) => {
                 write!(f, "Expected exactly one input file, but got {}.", num)
             }
-            Error::CouldntOpenFile {ref file_path, ref err} => {
+            Error::CouldntOpenFile { ref file_path, ref err } => {
                 write!(f, "Couldn't open file {}. {}", file_path.display(), *err)
             }
             Error::CouldntOpenAbr(ref e) => {
@@ -84,7 +84,7 @@ impl fmt::Display for Error {
                        "Couldn't guess an output directory from the input, please supply one \
                         explicitly with -o.")
             }
-            Error::CouldntCreateOutputDir {ref output_path, ref err} => {
+            Error::CouldntCreateOutputDir { ref output_path, ref err } => {
                 write!(f,
                        "Couldn't create output directory {}. {}",
                        output_path.display(),
@@ -99,17 +99,17 @@ impl error::Error for Error {
         match *self {
             Error::BadCommandlineOptions => "unexpected command-line option",
             Error::WrongNumberOfInputFiles(_) => "expected exactly one input file",
-            Error::CouldntOpenFile {..} => "couldn't open file",
+            Error::CouldntOpenFile { .. } => "couldn't open file",
             Error::CouldntOpenAbr(_) => "couldn't open file as ABR",
             Error::CouldntGuessOutputName => "couldn't guess an output directory from the input",
-            Error::CouldntCreateOutputDir {..} => "couldn't create output directory",
+            Error::CouldntCreateOutputDir { .. } => "couldn't create output directory",
         }
     }
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            Error::CouldntOpenFile {ref err, ..} => Some(err),
+            Error::CouldntOpenFile { ref err, .. } => Some(err),
             Error::CouldntOpenAbr(ref e) => Some(e),
-            Error::CouldntCreateOutputDir {ref err, ..} => Some(err),
+            Error::CouldntCreateOutputDir { ref err, .. } => Some(err),
             _ => None,
         }
     }

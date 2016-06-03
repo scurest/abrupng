@@ -1,8 +1,7 @@
+use err::Error;
+use getopts::Options;
 use std::env;
 use std::path::PathBuf;
-use getopts::Options;
-
-use err::Error;
 
 pub enum Command {
     Help,

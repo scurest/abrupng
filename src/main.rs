@@ -1,19 +1,17 @@
 // Extracts brushes from Adobe ABR files as PNGs. Based on gimpbrush-load.c
 // from GIMP.
 
-use std::io::stderr;
-use std::io::Write;
-use std::fs::File;
-use std::path::Path;
-
 extern crate getopts;
 extern crate image;
-
 mod abr;
-mod err;
 mod cli;
+mod err;
 
 use err::{Error, SaveBrushError};
+use std::fs::File;
+use std::io::stderr;
+use std::io::Write;
+use std::path::Path;
 
 // `main` is a wrapper for the C-style main function, `main2`. This lets us
 // unwind the stack before we die from calling `process::exit`.
@@ -31,7 +29,7 @@ fn main2() -> i32 {
                 cli::print_usage(&opts);
                 Ok(())
             }
-            cli::Command::Process {ref input_path, ref output_path} => {
+            cli::Command::Process { ref input_path, ref output_path } => {
                 process(input_path, output_path)
             }
         }

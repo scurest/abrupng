@@ -1,6 +1,6 @@
 use std;
 use std::io::{Read, Seek, SeekFrom};
-use abr::byteorder::{self, BigEndian, ReadBytesExt};
+use super::byteorder::{self, BigEndian, ReadBytesExt};
 
 /// Get the current location in a seekable stream.
 pub fn tell<R: Seek>(rdr: &mut R) -> std::io::Result<u64> {
@@ -15,8 +15,8 @@ pub fn read_rle_data<R: Read>(mut rdr: R,
                               -> Result<Vec<u8>, byteorder::Error> {
     // Read the lengths of the RLE-coded scanlines
     let lens: Vec<usize> = try!((0..height)
-                                    .map(|_| rdr.read_u16::<BigEndian>().map(|x| x as usize))
-                                    .collect());
+        .map(|_| rdr.read_u16::<BigEndian>().map(|x| x as usize))
+        .collect());
 
     // Decode.
     let mut data = Vec::with_capacity(size_hint);

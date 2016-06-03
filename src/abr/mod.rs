@@ -1,14 +1,13 @@
 extern crate byteorder;
-
 mod abr12;
 mod abr6;
 mod err;
 mod helper;
 
-pub use abr::err::{OpenError, BrushError};
-use self::byteorder::{BigEndian, ReadBytesExt};
+pub use self::err::{OpenError, BrushError};
 use self::abr12::Abr12Decoder;
 use self::abr6::Abr6Decoder;
+use self::byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Read, Seek};
 
 /// An image brush.
@@ -33,16 +32,14 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
     let subversion = try!(rdr.read_u16::<BigEndian>());
 
     Ok(Brushes(match version {
-        1 | 2 => {
-            Decoder::Abr12(try!(abr12::open(rdr, version, subversion)))
+        1 | 2 => Decoder::Abr12(try!(abr12::open(rdr, version, subversion))),
+        6 if subversion == 1 || subversion == 2 => Decoder::Abr6(try!(abr6::open(rdr, subversion))),
+        _ => {
+            return Err(OpenError::UnsupportedVersion {
+                version: version,
+                subversion: subversion,
+            })
         }
-        6 if subversion == 1 || subversion == 2 => {
-            Decoder::Abr6(try!(abr6::open(rdr, subversion)))
-        }
-        _ => return Err(OpenError::UnsupportedVersion {
-            version: version,
-            subversion: subversion,
-        })
     }))
 }
 

@@ -1,6 +1,6 @@
-use std::fmt;
+use super::byteorder;
 use std::error;
-use abr::byteorder;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum OpenError {
@@ -39,7 +39,7 @@ impl<T: Into<byteorder::Error>> From<T> for BrushError {
 impl fmt::Display for OpenError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            OpenError::UnsupportedVersion {version, subversion} => {
+            OpenError::UnsupportedVersion { version, subversion } => {
                 write!(f, "Unsupported version {}/{}", version, subversion)
             }
             OpenError::Found8bim => write!(f, "Found 8bim"),
@@ -51,7 +51,7 @@ impl fmt::Display for OpenError {
 impl error::Error for OpenError {
     fn description(&self) -> &str {
         match *self {
-            OpenError::UnsupportedVersion {..} => "Unsupported version",
+            OpenError::UnsupportedVersion { .. } => "Unsupported version",
             OpenError::Found8bim => "Found 8bim",
             OpenError::IoError(ref e) => error::Error::description(e),
         }
@@ -67,10 +67,10 @@ impl error::Error for OpenError {
 impl fmt::Display for BrushError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            BrushError::UnsupportedBitDepth {depth} => {
+            BrushError::UnsupportedBitDepth { depth } => {
                 write!(f, "Unsupported bit-depth, {}", depth)
             }
-            BrushError::UnsupportedBrushType {ty} => write!(f, "Unsupported brush type, {}", ty),
+            BrushError::UnsupportedBrushType { ty } => write!(f, "Unsupported brush type, {}", ty),
             BrushError::IoError(ref e) => write!(f, "{}", e),
         }
     }
@@ -79,8 +79,8 @@ impl fmt::Display for BrushError {
 impl error::Error for BrushError {
     fn description(&self) -> &str {
         match *self {
-            BrushError::UnsupportedBitDepth {..} => "Unsupported bit-depth",
-            BrushError::UnsupportedBrushType {..} => "Unsupported brush type",
+            BrushError::UnsupportedBitDepth { .. } => "Unsupported bit-depth",
+            BrushError::UnsupportedBrushType { .. } => "Unsupported brush type",
             BrushError::IoError(ref e) => error::Error::description(e),
         }
     }
