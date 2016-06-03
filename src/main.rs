@@ -57,7 +57,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
         }
     });
 
-    let decoder = match abr::Decoder::open(rdr) {
+    let brushes = match abr::open(rdr) {
         Ok(dec) => dec,
         Err(e) => return Err(Error::CouldntOpenAbr(e)),
     };
@@ -69,7 +69,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
         });
     }
 
-    for (idx, brush_result) in decoder.enumerate() {
+    for (idx, brush_result) in brushes.enumerate() {
         let save_path = output_path.join(Path::new(&format!("{}.png", idx)));
         match save_brush(brush_result, &save_path) {
             Ok(()) => {
@@ -84,7 +84,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-fn save_brush(brush_result: Result<abr::SampleBrush, abr::BrushError>,
+fn save_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
               save_path: &Path)
               -> Result<(), SaveBrushError> {
     let brush = try!(brush_result);

@@ -1,7 +1,7 @@
 use std::io::{Read, Seek, SeekFrom};
-use abr::byteorder::{self, BigEndian, ReadBytesExt};
-use abr::{SampleBrush, OpenError, BrushError};
-use abr::helper;
+use super::byteorder::{self, BigEndian, ReadBytesExt};
+use super::helper;
+use super::{ImageBrush, OpenError, BrushError};
 
 pub struct Abr6Decoder<R> {
     rdr: R,
@@ -37,7 +37,7 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R
 
 
 pub fn next_brush<R: Read + Seek>(dec: &mut Abr6Decoder<R>)
-                                  -> Option<Result<SampleBrush, BrushError>> {
+                                  -> Option<Result<ImageBrush, BrushError>> {
     // Is iteration over?
     if dec.next_brush_pos >= dec.sample_section_end {
         return None;
@@ -74,7 +74,7 @@ fn process_brush_length<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<u64,
     Ok(next_brush_pos)
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<SampleBrush, BrushError> {
+fn process_brush_body<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<ImageBrush, BrushError> {
     // Skip over... something.
     try!(dec.rdr.seek(SeekFrom::Current(if dec.subversion == 1 {
         47
@@ -106,7 +106,7 @@ fn process_brush_body<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<Sample
         v
     };
 
-    Ok(SampleBrush {
+    Ok(ImageBrush {
         width: width,
         height: height,
         depth: depth,

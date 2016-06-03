@@ -1,7 +1,7 @@
 use std::io::{Read, Seek, SeekFrom};
-use abr::byteorder::{self, BigEndian, ReadBytesExt};
-use abr::{SampleBrush, OpenError, BrushError};
-use abr::helper;
+use super::byteorder::{self, BigEndian, ReadBytesExt};
+use super::helper;
+use super::{ImageBrush, OpenError, BrushError};
 
 pub struct Abr12Decoder<R> {
     rdr: R,
@@ -26,7 +26,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
 
 
 pub fn next_brush<R: Read + Seek>(dec: &mut Abr12Decoder<R>)
-                                  -> Option<Result<SampleBrush, BrushError>> {
+                                  -> Option<Result<ImageBrush, BrushError>> {
     if dec.count == 0 {
         return None;
     }
@@ -61,7 +61,7 @@ fn process_brush_length<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<u64
     Ok(next_brush_pos)
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<SampleBrush, BrushError> {
+fn process_brush_body<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<ImageBrush, BrushError> {
     let ty = try!(dec.rdr.read_u16::<BigEndian>());
     if ty != 2 {
         return Err(BrushError::UnsupportedBrushType { ty: ty });
@@ -108,7 +108,7 @@ fn process_brush_body<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<Sampl
         v
     };
 
-    Ok(SampleBrush {
+    Ok(ImageBrush {
         width: width,
         height: height,
         depth: depth,
