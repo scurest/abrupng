@@ -14,17 +14,21 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R
     // Find the sample section
     loop {
         let mut buf = [0; 4];
+
         try!(rdr.read_exact(&mut buf));
         if buf == &b"8bim"[..] {
             return Err(OpenError::Found8bim);
         }
+
         try!(rdr.read_exact(&mut buf));
         if buf == &b"samp"[..] {
             break;
         }
+
         let len = try!(rdr.read_u32::<BigEndian>());
         try!(rdr.seek(SeekFrom::Current(len as i64)));
     }
+
     let len = try!(rdr.read_u32::<BigEndian>()) as u64;
     let cur = try!(helper::tell(&mut rdr));
     Ok(Abr6Decoder {
@@ -65,22 +69,17 @@ fn process_brush_length<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<u64,
     let brush_pos = dec.next_brush_pos;
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
 
-    let len = try!(dec.rdr.read_u32::<BigEndian>()) as u64;
-    // We are now at brush_pos + 4.
+    let len = try!(dec.rdr.read_u32::<BigEndian>()) as u64; // we are now at brush_pos + 4
     let end_pos = (brush_pos + 4) + len;
     // Brushes are aligned to 4-byte boundaries; round up to get to one.
     let next_brush_pos = (end_pos + 3) & !3;
-
     Ok(next_brush_pos)
 }
 
 fn process_brush_body<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<ImageBrush, BrushError> {
     // Skip over... something.
-    try!(dec.rdr.seek(SeekFrom::Current(if dec.subversion == 1 {
-        47
-    } else {
-        301
-    })));
+    let skip_amt = if dec.subversion == 1 { 47 } else { 301 };
+    try!(dec.rdr.seek(SeekFrom::Current(skip_amt)));
 
     let top = try!(dec.rdr.read_u32::<BigEndian>());
     let left = try!(dec.rdr.read_u32::<BigEndian>());
