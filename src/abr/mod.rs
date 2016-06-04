@@ -2,7 +2,7 @@ extern crate byteorder;
 mod abr12;
 mod abr6;
 mod err;
-mod helper;
+mod util;
 
 pub use self::err::{OpenError, BrushError};
 use self::abr12::Abr12Decoder;

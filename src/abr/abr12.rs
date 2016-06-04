@@ -1,6 +1,6 @@
 use std::io::{Read, Seek, SeekFrom};
 use super::byteorder::{self, BigEndian, ReadBytesExt};
-use super::helper;
+use super::util;
 use super::{ImageBrush, OpenError, BrushError};
 
 pub struct Abr12Decoder<R> {
@@ -15,7 +15,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
                             version: u16,
                             count: u16)
                             -> Result<Abr12Decoder<R>, OpenError> {
-    let cur_pos = try!(helper::tell(&mut rdr));
+    let cur_pos = try!(util::tell(&mut rdr));
     Ok(Abr12Decoder {
         rdr: rdr,
         version: version,
@@ -101,7 +101,7 @@ fn process_brush_body<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<Image
     let size = (width as usize) * (height as usize) * (depth as usize >> 3);
 
     let data = if compressed {
-        try!(helper::read_rle_data(&mut dec.rdr, height, size))
+        try!(util::read_rle_data(&mut dec.rdr, height, size))
     } else {
         let mut v = vec![0; size];
         try!(dec.rdr.read_exact(&mut v));
