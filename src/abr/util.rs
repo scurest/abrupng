@@ -13,36 +13,35 @@ pub fn read_rle_data<R: Read>(mut rdr: R,
                               height: u32,
                               size_hint: usize)
                               -> Result<Vec<u8>, byteorder::Error> {
-    // Read the lengths of the RLE-coded scanlines
-    let lens: Vec<usize> = try!((0..height)
-        .map(|_| rdr.read_u16::<BigEndian>().map(|x| x as usize))
-        .collect());
+    // There are `height` u16s containing the RLE'd length of each of
+    // the `height` scanlines.
+    // We just need the total length.
+    let mut len = 0u64;
+    for _ in 0..height {
+        len += try!(rdr.read_u16::<BigEndian>()) as u64;
+    }
 
-    // Decode.
+    // Decode RLE'd data.
     let mut data = Vec::with_capacity(size_hint);
-    for len in lens {
-        let mut bytes_read = 0;
-        while bytes_read < len {
-            let n = try!(rdr.read_i8());
+    let mut bytes_read = 0;
+    while bytes_read < len {
+        let n = try!(rdr.read_i8());
+        bytes_read += 1;
+        if n == -128 {
+            // NOP
+        } else if n < 0 {
+            // RLE encoded. Repeat the next byte -n+1 times.
+            let count = -n as usize + 1;
+            let b = try!(rdr.read_u8());
             bytes_read += 1;
-            if n < 0 {
-                // RLE encoded. Repeat the next byte -n+1 times.
-                if n == -128 {
-                    // (...except this is a NOP)
-                    continue;
-                }
-                let count = (-n) as usize + 1;
-                let b = try!(rdr.read_u8());
-                bytes_read += 1;
-                data.extend(std::iter::repeat(b).take(count));
-            } else {
-                // Uncoded. Read the next n+1 bytes, raw, from the input.
-                let count = n as usize + 1;
-                let start_idx = data.len();
-                data.extend(std::iter::repeat(0).take(count));
-                try!(rdr.read_exact(&mut data[start_idx..]));
-                bytes_read += count;
-            }
+            data.extend(std::iter::repeat(b).take(count));
+        } else {
+            // Uncoded. Read the next n+1 bytes, raw, from the input.
+            let count = n as usize + 1;
+            let off = data.len();
+            data.extend(std::iter::repeat(0).take(count));
+            try!(rdr.read_exact(&mut data[off..]));
+            bytes_read += count as u64;
         }
     }
     Ok(data)
