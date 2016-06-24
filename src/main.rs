@@ -10,7 +10,7 @@ mod err;
 
 use err::{Error, SaveBrushError};
 use std::fs::File;
-use std::io::stderr;
+use std::io;
 use std::io::Write;
 use std::path::Path;
 
@@ -38,10 +38,7 @@ fn main2() -> i32 {
 
     match result {
         Ok(()) => 0,
-        Err(e) => {
-            writeln!(stderr(), "error: {}", e).unwrap();
-            1
-        }
+        Err(e) => { report_error(e); 1 }
     }
 }
 
@@ -75,7 +72,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
                 println!("Wrote {}.", save_path.display());
             }
             Err(e) => {
-                writeln!(stderr(), "error saving brush #{}: {}", idx, e).unwrap();
+                writeln!(io::stderr(), "error saving brush #{}: {}", idx, e).unwrap();
             }
         }
     }
@@ -92,4 +89,25 @@ fn save_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
                                brush.width,
                                brush.height,
                                image::Gray(brush.depth as u8))))
+}
+
+fn report_error(err: Error) {
+    let stderr = io::stderr();
+    let mut out = stderr.lock();
+
+    writeln!(out, "error: {}", err).unwrap();
+
+    // Try to suggest how to fix it.
+    match err {
+        Error::BadCommandlineOptions | Error::WrongNumberOfInputFiles(_) =>
+            writeln!(out, "Use -h for help.").unwrap(),
+        Error::CouldntOpenAbr(_) =>
+            writeln!(out, "Ensure the provided file was an ABR. If it was, \
+                           it's unsuporrted, sorry :(").unwrap(),
+        Error::CouldntCreateOutputDir { err: ref io_err, .. }
+            if io_err.kind() == io::ErrorKind::AlreadyExists =>
+            writeln!(out, "abr2png will create the output directory. Make sure \
+                           it doesn't already exist.").unwrap(),
+        _ => (),
+    }
 }
