@@ -31,6 +31,7 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, O
 
     let len = try!(rdr.read_u32::<BigEndian>()) as u64;
     let cur = try!(util::tell(&mut rdr));
+
     Ok(Decoder {
         rdr: rdr,
         subversion: subversion,
@@ -47,36 +48,42 @@ pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
         return None;
     }
 
-    // Process the length; if we can't get it, we can't resume on the next brush, so
-    // flag the iteration as over by setting next_brush_pos to the end of the
-    // section.
-    match process_brush_length(dec) {
-        Ok(next_brush_pos) => {
-            dec.next_brush_pos = next_brush_pos;
+    Some(match do_brush_head(dec) {
+        Ok(res) => {
+            dec.next_brush_pos = res.next_brush_pos;
+            do_brush_body(dec)
         }
         Err(e) => {
+            // We didn't get the next brush's position, so we can't resume on
+            // the next brush. Flag the iteration as over before we error out.
             dec.next_brush_pos = dec.sample_section_end;
-            return Some(Err(BrushError::IoError(e)));
+            Err(e.into())
         }
-    }
-
-    Some(process_brush_body(dec))
+    })
 }
 
-/// Get the reader prepped to begin reading out a brush. Returns the position where
-/// the next brush starts.
-fn process_brush_length<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<u64, byteorder::Error> {
+struct BrushHeadResult {
+    next_brush_pos: u64,
+}
+
+/// Moves `dec` into position to read out the next brush with `do_brush_body`.
+/// Returns where the brush after this one is located.
+fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
+                                   -> Result<BrushHeadResult, byteorder::Error> {
     let brush_pos = dec.next_brush_pos;
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
 
-    let len = try!(dec.rdr.read_u32::<BigEndian>()) as u64; // we are now at brush_pos + 4
+    let len = try!(dec.rdr.read_u32::<BigEndian>()) as u64;
+    // We are now at brush_pos + 4
     let end_pos = (brush_pos + 4) + len;
     // Brushes are aligned to 4-byte boundaries; round up to get to one.
     let next_brush_pos = (end_pos + 3) & !3;
-    Ok(next_brush_pos)
+
+    Ok(BrushHeadResult { next_brush_pos: next_brush_pos })
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
+/// With `dec` positioned by `do_brush_head`, reads out a brush.
+fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     // Skip over... something.
     let skip_amt = if dec.subversion == 1 { 47 } else { 301 };
     try!(dec.rdr.seek(SeekFrom::Current(skip_amt)));

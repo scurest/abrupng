@@ -10,7 +10,6 @@ pub struct Decoder<R> {
     next_brush_pos: u64,
 }
 
-
 pub fn open<R: Read + Seek>(mut rdr: R,
                             version: u16,
                             count: u16)
@@ -24,7 +23,6 @@ pub fn open<R: Read + Seek>(mut rdr: R,
     })
 }
 
-
 pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
                                   -> Option<Result<ImageBrush, BrushError>> {
     if dec.count == 0 {
@@ -33,35 +31,40 @@ pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
 
     dec.count -= 1;
 
-    // Process the length; if we can't get it, we can't resume on the next brush, so
-    // flag the iteration as over by setting count to 0.
-    match process_brush_length(dec) {
-        Ok(next_brush_pos) => {
-            dec.next_brush_pos = next_brush_pos;
+    Some(match do_brush_head(dec) {
+        Ok(res) => {
+            dec.next_brush_pos = res.next_brush_pos;
+            do_brush_body(dec)
         }
         Err(e) => {
+            // We didn't get the next brush's position, so we can't resume on
+            // the next brush. Flag the iteration as over before we error out.
             dec.count = 0;
-            return Some(Err(BrushError::IoError(e)));
+            Err(e.into())
         }
-    }
-
-    Some(process_brush_body(dec))
+    })
 }
 
-/// Get the reader prepped to begin reading out a brush. Returns the position where
-/// the next brush starts.
-fn process_brush_length<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<u64, byteorder::Error> {
-    let brush_pos = dec.next_brush_pos;
+struct BrushHeadResult {
+    next_brush_pos: u64,
+}
 
+/// Moves `dec` into position to read out the next brush with `do_brush_body`.
+/// Returns where the brush after this one is located.
+fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
+                                 -> Result<BrushHeadResult, byteorder::Error> {
+    let brush_pos = dec.next_brush_pos;
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
+
     let len = try!(dec.rdr.read_u16::<BigEndian>()) as u64;
     // We are now at brush_pos + 2.
     let next_brush_pos = (brush_pos + 2) + len;
 
-    Ok(next_brush_pos)
+    Ok(BrushHeadResult { next_brush_pos: next_brush_pos })
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
+/// With `dec` positioned by `do_brush_head`, reads out a brush.
+fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     let ty = try!(dec.rdr.read_u16::<BigEndian>());
     if ty != 2 {
         return Err(BrushError::UnsupportedBrushType { ty: ty });
