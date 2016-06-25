@@ -5,8 +5,6 @@ mod err;
 mod util;
 
 pub use self::err::{OpenError, BrushError};
-use self::abr12::Abr12Decoder;
-use self::abr6::Abr6Decoder;
 use self::byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Read, Seek};
 
@@ -44,8 +42,8 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
 }
 
 enum Decoder<R> {
-    Abr6(Abr6Decoder<R>),
-    Abr12(Abr12Decoder<R>),
+    Abr12(abr12::Decoder<R>),
+    Abr6(abr6::Decoder<R>),
 }
 
 impl<R: Read + Seek> Iterator for Brushes<R> {

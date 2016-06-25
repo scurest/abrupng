@@ -1,5 +1,5 @@
-use super::byteorder;
 use std::io;
+use super::byteorder;
 
 quick_error! {
     #[derive(Debug)]

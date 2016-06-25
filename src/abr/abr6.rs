@@ -1,16 +1,16 @@
 use std::io::{Read, Seek, SeekFrom};
 use super::byteorder::{self, BigEndian, ReadBytesExt};
-use super::util;
 use super::{ImageBrush, OpenError, BrushError};
+use super::util;
 
-pub struct Abr6Decoder<R> {
+pub struct Decoder<R> {
     rdr: R,
     subversion: u16,
     sample_section_end: u64,
     next_brush_pos: u64,
 }
 
-pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R>, OpenError> {
+pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, OpenError> {
     // Find the sample section
     loop {
         let mut buf = [0; 4];
@@ -31,7 +31,7 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R
 
     let len = try!(rdr.read_u32::<BigEndian>()) as u64;
     let cur = try!(util::tell(&mut rdr));
-    Ok(Abr6Decoder {
+    Ok(Decoder {
         rdr: rdr,
         subversion: subversion,
         sample_section_end: cur + len,
@@ -40,7 +40,7 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Abr6Decoder<R
 }
 
 
-pub fn next_brush<R: Read + Seek>(dec: &mut Abr6Decoder<R>)
+pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
                                   -> Option<Result<ImageBrush, BrushError>> {
     // Is iteration over?
     if dec.next_brush_pos >= dec.sample_section_end {
@@ -65,7 +65,7 @@ pub fn next_brush<R: Read + Seek>(dec: &mut Abr6Decoder<R>)
 
 /// Get the reader prepped to begin reading out a brush. Returns the position where
 /// the next brush starts.
-fn process_brush_length<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<u64, byteorder::Error> {
+fn process_brush_length<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<u64, byteorder::Error> {
     let brush_pos = dec.next_brush_pos;
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
 
@@ -76,7 +76,7 @@ fn process_brush_length<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<u64,
     Ok(next_brush_pos)
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Abr6Decoder<R>) -> Result<ImageBrush, BrushError> {
+fn process_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     // Skip over... something.
     let skip_amt = if dec.subversion == 1 { 47 } else { 301 };
     try!(dec.rdr.seek(SeekFrom::Current(skip_amt)));

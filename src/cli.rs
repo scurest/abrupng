@@ -20,7 +20,7 @@ pub fn make_options() -> Options {
 
 pub fn print_usage(opts: &Options) {
     let first_arg = env::args().next();
-    let prgm_name = first_arg.as_ref().map(String::as_str).unwrap_or("abr2png");
+    let prgm_name = first_arg.as_ref().map_or("abr2png", String::as_str);
     let brief = format!("Usage: {} INPUT [-o OUTPUT]", prgm_name);
     print!("{}", opts.usage(&brief));
 }

@@ -1,9 +1,9 @@
 use std::io::{Read, Seek, SeekFrom};
 use super::byteorder::{self, BigEndian, ReadBytesExt};
-use super::util;
 use super::{ImageBrush, OpenError, BrushError};
+use super::util;
 
-pub struct Abr12Decoder<R> {
+pub struct Decoder<R> {
     rdr: R,
     version: u16,
     count: u16,
@@ -14,9 +14,9 @@ pub struct Abr12Decoder<R> {
 pub fn open<R: Read + Seek>(mut rdr: R,
                             version: u16,
                             count: u16)
-                            -> Result<Abr12Decoder<R>, OpenError> {
+                            -> Result<Decoder<R>, OpenError> {
     let cur_pos = try!(util::tell(&mut rdr));
-    Ok(Abr12Decoder {
+    Ok(Decoder {
         rdr: rdr,
         version: version,
         count: count,
@@ -25,7 +25,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
 }
 
 
-pub fn next_brush<R: Read + Seek>(dec: &mut Abr12Decoder<R>)
+pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
                                   -> Option<Result<ImageBrush, BrushError>> {
     if dec.count == 0 {
         return None;
@@ -50,7 +50,7 @@ pub fn next_brush<R: Read + Seek>(dec: &mut Abr12Decoder<R>)
 
 /// Get the reader prepped to begin reading out a brush. Returns the position where
 /// the next brush starts.
-fn process_brush_length<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<u64, byteorder::Error> {
+fn process_brush_length<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<u64, byteorder::Error> {
     let brush_pos = dec.next_brush_pos;
 
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
@@ -61,7 +61,7 @@ fn process_brush_length<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<u64
     Ok(next_brush_pos)
 }
 
-fn process_brush_body<R: Read + Seek>(dec: &mut Abr12Decoder<R>) -> Result<ImageBrush, BrushError> {
+fn process_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     let ty = try!(dec.rdr.read_u16::<BigEndian>());
     if ty != 2 {
         return Err(BrushError::UnsupportedBrushType { ty: ty });

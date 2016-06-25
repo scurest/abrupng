@@ -4,6 +4,7 @@
 extern crate getopts;
 extern crate image;
 #[macro_use] extern crate quick_error;
+
 mod abr;
 mod cli;
 mod err;
@@ -13,9 +14,6 @@ use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::Path;
-
-// `main` is a wrapper for the C-style main function, `main2`. This lets us
-// unwind the stack before we die from calling `process::exit`.
 
 fn main() {
     let ret_code = main2();
@@ -72,7 +70,7 @@ fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
                 println!("Wrote {}.", save_path.display());
             }
             Err(e) => {
-                writeln!(io::stderr(), "error saving brush #{}: {}", idx, e).unwrap();
+                writeln!(io::stderr(), "Error saving brush #{}: {}", idx, e).unwrap();
             }
         }
     }
