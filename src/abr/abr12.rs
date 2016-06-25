@@ -1,5 +1,5 @@
-use std::io::{Read, Seek, SeekFrom};
-use super::byteorder::{self, BigEndian, ReadBytesExt};
+use std::io::{self, Read, Seek, SeekFrom};
+use super::byteorder::{BigEndian, ReadBytesExt};
 use super::{ImageBrush, OpenError, BrushError};
 use super::util;
 
@@ -52,7 +52,7 @@ struct BrushHeadResult {
 /// Moves `dec` into position to read out the next brush with `do_brush_body`.
 /// Returns where the brush after this one is located.
 fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
-                                 -> Result<BrushHeadResult, byteorder::Error> {
+                                 -> Result<BrushHeadResult, io::Error> {
     let brush_pos = dec.next_brush_pos;
     try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
 

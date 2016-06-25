@@ -1,6 +1,6 @@
 use std;
-use std::io::{Read, Seek, SeekFrom};
-use super::byteorder::{self, BigEndian, ReadBytesExt};
+use std::io::{self, Read, Seek, SeekFrom};
+use super::byteorder::{BigEndian, ReadBytesExt};
 
 /// Get the current location in a seekable stream.
 pub fn tell<R: Seek>(rdr: &mut R) -> std::io::Result<u64> {
@@ -12,7 +12,7 @@ pub fn tell<R: Seek>(rdr: &mut R) -> std::io::Result<u64> {
 pub fn read_rle_data<R: Read>(mut rdr: R,
                               height: u32,
                               size_hint: usize)
-                              -> Result<Vec<u8>, byteorder::Error> {
+                              -> Result<Vec<u8>, io::Error> {
     // There are `height` u16s containing the RLE'd length of each of
     // the `height` scanlines.
     // We just need the total length.

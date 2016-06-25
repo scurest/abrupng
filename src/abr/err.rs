@@ -1,5 +1,4 @@
 use std::io;
-use super::byteorder;
 
 quick_error! {
     #[derive(Debug)]
@@ -15,12 +14,11 @@ quick_error! {
             // What IS this?
             description("found 8bim")
         }
-        IoError(err: byteorder::Error) {
+        IoError(err: io::Error) {
             description("read error")
             display("read error: {}", err)
             cause(err)
             from()
-            from(e: io::Error) -> (e.into())
         }
     }
 }
@@ -36,12 +34,11 @@ quick_error! {
             description("unsupported brush type")
             display("unsupported brush type: {}", ty)
         }
-        IoError(err: byteorder::Error) {
+        IoError(err: io::Error) {
             description("read error")
             display("read error: {}", err)
             cause(err)
             from()
-            from(e: io::Error) -> (e.into())
         }
     }
 }
