@@ -19,9 +19,11 @@ pub fn make_options() -> Options {
 }
 
 pub fn print_usage(opts: &Options) {
-    let first_arg = env::args().next();
-    let prgm_name = first_arg.as_ref().map_or("abr2png", String::as_str);
-    let brief = format!("Usage: {} INPUT [-o OUTPUT]", prgm_name);
+    let brief =
+        "Extracts image brushes from Adobe ABR files as PNGs.\n\
+         \n\
+         Usage:\
+         \n    abrupng INPUT [-o OUTPUT]";
     print!("{}", opts.usage(&brief));
 }
 

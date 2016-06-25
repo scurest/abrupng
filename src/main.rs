@@ -104,7 +104,7 @@ fn report_error(err: Error) {
                            it's unsuporrted, sorry :(").unwrap(),
         Error::CouldntCreateOutputDir { err: ref io_err, .. }
             if io_err.kind() == io::ErrorKind::AlreadyExists =>
-            writeln!(out, "abr2png will create the output directory. Make sure \
+            writeln!(out, "The output directory will be created. Make sure \
                            it doesn't already exist.").unwrap(),
         _ => (),
     }

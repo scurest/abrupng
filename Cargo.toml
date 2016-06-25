@@ -2,7 +2,7 @@
 authors = ["scurest <scurest@users.noreply.github.com>"]
 description = "Extract image brushes from Adobe ABR files as PNGs."
 license = "GPL-3.0"
-name = "abr2png"
+name = "abrupng"
 readme = "README.md"
 version = "0.1.0"
 
