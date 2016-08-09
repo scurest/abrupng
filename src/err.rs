@@ -41,7 +41,7 @@ quick_error! {
 
 quick_error! {
     #[derive(Debug)]
-    pub enum SaveBrushError {
+    pub enum ProcessBrushError {
         AbrBrushError(err: abr::BrushError) {
             description("couldn't read brush")
             display("couldn't read brush: {}", err)

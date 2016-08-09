@@ -1,25 +1,27 @@
-// Extracts brushes from Adobe ABR files as PNGs. Based on gimpbrush-load.c
-// from GIMP.
+//! Command-line utility for converting an Adobe ABR file to the
+//! brushes it contains (as PNGs).
 
 extern crate getopts;
 extern crate image;
-#[macro_use] extern crate quick_error;
+#[macro_use]
+extern crate quick_error;
 
 mod abr;
 mod cli;
 mod err;
 
-use err::{Error, SaveBrushError};
+use err::{Error, ProcessBrushError};
 use std::fs::File;
 use std::io;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn main() {
     let ret_code = main2();
     std::process::exit(ret_code);
 }
 
+/// C-style main function.
 fn main2() -> i32 {
     let opts = cli::make_options();
     let result = cli::parse_cli_options(&opts).and_then(|command| {
@@ -28,7 +30,7 @@ fn main2() -> i32 {
                 cli::print_usage(&opts);
                 Ok(())
             }
-            cli::Command::Process { ref input_path, ref output_path } => {
+            cli::Command::Process { input_path, output_path } => {
                 process(input_path, output_path)
             }
         }
@@ -40,55 +42,58 @@ fn main2() -> i32 {
     }
 }
 
-fn process(input_path: &Path, output_path: &Path) -> Result<(), Error> {
-    let rdr = std::io::BufReader::new(match File::open(input_path) {
+/// Reads an ABR file at `input_path` and extracts the image brushes
+/// as PNGs, writing them to the directory `output_path`.
+fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
+    let file = match File::open(&input_path) {
         Ok(f) => f,
-        Err(e) => {
-            return Err(Error::CouldntOpenFile {
-                file_path: input_path.into(),
-                err: e,
-            })
-        }
-    });
+        Err(e) => return Err(Error::CouldntOpenFile {
+            file_path: input_path,
+            err: e,
+        })
+    };
+    let rdr = std::io::BufReader::new(file);
 
     let brushes = match abr::open(rdr) {
         Ok(dec) => dec,
         Err(e) => return Err(Error::CouldntOpenAbr(e)),
     };
 
-    if let Err(e) = std::fs::create_dir(output_path) {
-        return Err(Error::CouldntCreateOutputDir {
-            output_path: output_path.into(),
+    match std::fs::create_dir(&output_path) {
+        Ok(()) => {},
+        Err(e) => return Err(Error::CouldntCreateOutputDir {
+            output_path: output_path,
             err: e,
-        });
+        })
     }
 
     for (idx, brush_result) in brushes.enumerate() {
         let save_path = output_path.join(Path::new(&format!("{}.png", idx)));
-        match save_brush(brush_result, &save_path) {
-            Ok(()) => {
-                println!("Wrote {}.", save_path.display());
-            }
-            Err(e) => {
-                writeln!(io::stderr(), "Error saving brush #{}: {}", idx, e).unwrap();
-            }
+        match process_brush(brush_result, &save_path) {
+            Ok(()) => println!("Wrote {}.", save_path.display()),
+            Err(e) => writeln!(io::stderr(), "error on brush {}: {}", idx, e).unwrap(),
         }
     }
 
     Ok(())
 }
 
-fn save_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
+/// Saves the result of reading out a brush to `save_path`. Returns an
+/// error if either the reading failed or the writing fails.
+fn process_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
               save_path: &Path)
-              -> Result<(), SaveBrushError> {
+              -> Result<(), ProcessBrushError> {
     let brush = try!(brush_result);
-    Ok(try!(image::save_buffer(save_path,
-                               &brush.data[..],
-                               brush.width,
-                               brush.height,
-                               image::Gray(brush.depth as u8))))
+    try!(image::save_buffer(save_path,
+                            &brush.data[..],
+                            brush.width,
+                            brush.height,
+                            image::Gray(brush.depth as u8)));
+    Ok(())
 }
 
+/// Prints an error, plus some information for humans about what they
+/// might do about it.
 fn report_error(err: Error) {
     let stderr = io::stderr();
     let mut out = stderr.lock();
