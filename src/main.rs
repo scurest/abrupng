@@ -97,7 +97,7 @@ fn report_error(err: Error) {
 
     // Try to suggest how to fix it.
     match err {
-        Error::BadCommandlineOptions | Error::WrongNumberOfInputFiles(_) =>
+        Error::BadCommandlineOptions(_) | Error::WrongNumberOfInputFiles(_) =>
             writeln!(out, "Use -h for help.").unwrap(),
         Error::CouldntOpenAbr(_) =>
             writeln!(out, "Ensure the provided file was an ABR. If it was, \

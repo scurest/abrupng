@@ -1,12 +1,16 @@
 use abr;
+use getopts;
 use std::io;
 use std::path::PathBuf;
 
 quick_error! {
     #[derive(Debug)]
     pub enum Error {
-        BadCommandlineOptions {
-            description("unexpected command-line option")
+        BadCommandlineOptions(reason: getopts::Fail) {
+            description("bad command-line option")
+            display("bad command-line option: {}", reason)
+            cause(reason)
+            from()
         }
         WrongNumberOfInputFiles(num: usize) {
             description("expected exactly one input file")
