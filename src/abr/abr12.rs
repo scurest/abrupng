@@ -14,7 +14,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
                             version: u16,
                             count: u16)
                             -> Result<Decoder<R>, OpenError> {
-    let cur_pos = try!(util::tell(&mut rdr));
+    let cur_pos = util::tell(&mut rdr)?;
     Ok(Decoder {
         rdr: rdr,
         version: version,
@@ -54,9 +54,9 @@ struct BrushHeadResult {
 fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
                                  -> Result<BrushHeadResult, io::Error> {
     let brush_pos = dec.next_brush_pos;
-    try!(dec.rdr.seek(SeekFrom::Start(brush_pos)));
+    dec.rdr.seek(SeekFrom::Start(brush_pos))?;
 
-    let len = try!(dec.rdr.read_u16::<BigEndian>()) as u64;
+    let len = dec.rdr.read_u16::<BigEndian>()? as u64;
     // We are now at brush_pos + 2.
     let next_brush_pos = (brush_pos + 2) + len;
 
@@ -65,49 +65,49 @@ fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
 
 /// With `dec` positioned by `do_brush_head`, reads out a brush.
 fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
-    let ty = try!(dec.rdr.read_u16::<BigEndian>());
+    let ty = dec.rdr.read_u16::<BigEndian>()?;
     if ty != 2 {
         return Err(BrushError::UnsupportedBrushType { ty: ty });
     }
 
-    let _misc = try!(dec.rdr.read_u32::<BigEndian>());
-    let _spacing = try!(dec.rdr.read_u16::<BigEndian>());
+    let _misc = dec.rdr.read_u32::<BigEndian>()?;
+    let _spacing = dec.rdr.read_u16::<BigEndian>()?;
 
     if dec.version == 2 {
         // Skip over a length-prefixed UCS2 String
-        let len = try!(dec.rdr.read_u32::<BigEndian>()) as i64;
+        let len = dec.rdr.read_u32::<BigEndian>()? as i64;
         let len_in_bytes = 2 * len;
-        try!(dec.rdr.seek(SeekFrom::Current(len_in_bytes)));
+        dec.rdr.seek(SeekFrom::Current(len_in_bytes))?;
     }
 
-    let _antialiasing = try!(dec.rdr.read_u8());
+    let _antialiasing = dec.rdr.read_u8()?;
 
-    let top = try!(dec.rdr.read_u16::<BigEndian>());
-    let left = try!(dec.rdr.read_u16::<BigEndian>());
-    let bottom = try!(dec.rdr.read_u16::<BigEndian>());
-    let right = try!(dec.rdr.read_u16::<BigEndian>());
+    let top = dec.rdr.read_u16::<BigEndian>()?;
+    let left = dec.rdr.read_u16::<BigEndian>()?;
+    let bottom = dec.rdr.read_u16::<BigEndian>()?;
+    let right = dec.rdr.read_u16::<BigEndian>()?;
 
-    let _topl = try!(dec.rdr.read_u32::<BigEndian>());
-    let _leftl = try!(dec.rdr.read_u32::<BigEndian>());
-    let _bottoml = try!(dec.rdr.read_u32::<BigEndian>());
-    let _rightl = try!(dec.rdr.read_u32::<BigEndian>());
+    let _topl = dec.rdr.read_u32::<BigEndian>()?;
+    let _leftl = dec.rdr.read_u32::<BigEndian>()?;
+    let _bottoml = dec.rdr.read_u32::<BigEndian>()?;
+    let _rightl = dec.rdr.read_u32::<BigEndian>()?;
 
-    let depth = try!(dec.rdr.read_u16::<BigEndian>());
+    let depth = dec.rdr.read_u16::<BigEndian>()?;
     if depth != 8 {
         return Err(BrushError::UnsupportedBitDepth { depth: depth });
     }
 
-    let compressed = try!(dec.rdr.read_u8()) != 0;
+    let compressed = dec.rdr.read_u8()? != 0;
 
     let width = (right - left) as u32;
     let height = (bottom - top) as u32;
     let size = (width as usize) * (height as usize) * (depth as usize >> 3);
 
     let data = if compressed {
-        try!(util::read_rle_data(&mut dec.rdr, height, size))
+        util::read_rle_data(&mut dec.rdr, height, size)?
     } else {
         let mut v = vec![0; size];
-        try!(dec.rdr.read_exact(&mut v));
+        dec.rdr.read_exact(&mut v)?;
         v
     };
 

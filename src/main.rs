@@ -83,12 +83,12 @@ fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
 fn process_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
               save_path: &Path)
               -> Result<(), ProcessBrushError> {
-    let brush = try!(brush_result);
-    try!(image::save_buffer(save_path,
-                            &brush.data[..],
-                            brush.width,
-                            brush.height,
-                            image::Gray(brush.depth as u8)));
+    let brush = brush_result?;
+    image::save_buffer(save_path,
+                       &brush.data[..],
+                       brush.width,
+                       brush.height,
+                       image::Gray(brush.depth as u8))?;
     Ok(())
 }
 

@@ -26,7 +26,7 @@ pub fn print_usage(opts: &Options) {
 
 pub fn parse_cli_options(opts: &Options) -> Result<Command, Error> {
     let args: Vec<String> = env::args().collect();
-    let matches = try!(opts.parse(&args[1..]));
+    let matches = opts.parse(&args[1..])?;
 
     if matches.opt_present("h") {
         Ok(Command::Help)

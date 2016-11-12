@@ -18,21 +18,21 @@ pub fn read_rle_data<R: Read>(mut rdr: R,
     // We just need the total length.
     let mut len = 0u64;
     for _ in 0..height {
-        len += try!(rdr.read_u16::<BigEndian>()) as u64;
+        len += rdr.read_u16::<BigEndian>()? as u64;
     }
 
     // Decode RLE'd data.
     let mut data = Vec::with_capacity(size_hint);
     let mut bytes_read = 0;
     while bytes_read < len {
-        let n = try!(rdr.read_i8());
+        let n = rdr.read_i8()?;
         bytes_read += 1;
         if n == -128 {
             // NOP
         } else if n < 0 {
             // RLE encoded. Repeat the next byte -n+1 times.
             let count = -n as usize + 1;
-            let b = try!(rdr.read_u8());
+            let b = rdr.read_u8()?;
             bytes_read += 1;
             data.extend(std::iter::repeat(b).take(count));
         } else {
@@ -40,7 +40,7 @@ pub fn read_rle_data<R: Read>(mut rdr: R,
             let count = n as usize + 1;
             let off = data.len();
             data.extend(std::iter::repeat(0).take(count));
-            try!(rdr.read_exact(&mut data[off..]));
+            rdr.read_exact(&mut data[off..])?;
             bytes_read += count as u64;
         }
     }
