@@ -1,14 +1,16 @@
 //! Command-line utility for converting an Adobe ABR file to the
 //! brushes it contains (as PNGs).
 
+extern crate byteorder;
 extern crate getopts;
-extern crate image;
+extern crate png as pnglib;
 #[macro_use]
 extern crate quick_error;
 
 mod abr;
 mod cli;
 mod err;
+mod png;
 
 use err::{Error, ProcessBrushError};
 use std::fs::File;
@@ -78,11 +80,11 @@ fn process_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
               save_path: &Path)
               -> Result<(), ProcessBrushError> {
     let brush = brush_result?;
-    image::save_buffer(save_path,
-                       &brush.data[..],
-                       brush.width,
-                       brush.height,
-                       image::Gray(brush.depth as u8))?;
+    png::save_greyscale(save_path,
+                        &brush.data[..],
+                        brush.width,
+                        brush.height,
+                        brush.depth)?;
     Ok(())
 }
 

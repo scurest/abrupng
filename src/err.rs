@@ -1,5 +1,6 @@
 use abr;
 use getopts;
+use pnglib;
 use std::io;
 use std::path::PathBuf;
 
@@ -48,11 +49,34 @@ quick_error! {
             cause(err)
             from()
         }
-        SavePngError(err: io::Error) {
+        SavePngError(err: SavePngError) {
             description("couldn't save PNG")
             display("couldn't save PNG: {}", err)
             cause(err)
             from()
+        }
+    }
+}
+
+
+quick_error! {
+    #[derive(Debug)]
+    pub enum SavePngError {
+        EncodingError(err: pnglib::EncodingError) {
+            description("couldn't encode png")
+            display("couldn't encode PNG: {}", err)
+            cause(err)
+            from()
+        }
+        IoError(err: io::Error) {
+            description("couldn't save PNG")
+            display("couldn't save PNG: {}", err)
+            cause(err)
+            from()
+        }
+        BadBitDepth(depth: u16) {
+            description("bad bit-depth")
+            display("bad bit-depth: {}", depth)
         }
     }
 }
