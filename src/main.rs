@@ -45,27 +45,21 @@ fn main2() -> i32 {
 /// Reads an ABR file at `input_path` and extracts the image brushes
 /// as PNGs, writing them to the directory `output_path`.
 fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
-    let file = match File::open(&input_path) {
-        Ok(f) => f,
-        Err(e) => return Err(Error::CouldntOpenFile {
+    let file = File::open(&input_path)
+        .map_err(|e| Error::CouldntOpenFile {
             file_path: input_path,
             err: e,
-        })
-    };
+        })?;
     let rdr = std::io::BufReader::new(file);
 
-    let brushes = match abr::open(rdr) {
-        Ok(dec) => dec,
-        Err(e) => return Err(Error::CouldntOpenAbr(e)),
-    };
+    let brushes = abr::open(rdr)
+        .map_err(|e| Error::CouldntOpenAbr(e))?;
 
-    match std::fs::create_dir(&output_path) {
-        Ok(()) => {},
-        Err(e) => return Err(Error::CouldntCreateOutputDir {
-            output_path: output_path,
+    std::fs::create_dir(&output_path)
+        .map_err(|e| Error::CouldntCreateOutputDir {
+            output_path: output_path.clone(),
             err: e,
-        })
-    }
+        })?;
 
     for (idx, brush_result) in brushes.enumerate() {
         let save_path = output_path.join(Path::new(&format!("{}.png", idx)));
