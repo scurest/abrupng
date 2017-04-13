@@ -16,7 +16,7 @@ abrupng is written in [Rust](https://rust-lang.org/). Make sure you have Rust an
     $ cd abrupng
     $ cargo build --release
 
-##Usage
+## Usage
 
 Basic usage is
 
