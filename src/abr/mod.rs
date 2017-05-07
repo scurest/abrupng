@@ -32,12 +32,7 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
     Ok(Brushes(match version {
         1 | 2 => Decoder::Abr12(abr12::open(rdr, version, subversion)?),
         6 if subversion == 1 || subversion == 2 => Decoder::Abr6(abr6::open(rdr, subversion)?),
-        _ => {
-            return Err(OpenError::UnsupportedVersion {
-                version: version,
-                subversion: subversion,
-            })
-        }
+        _ => return Err(OpenError::UnsupportedVersion { version, subversion }),
     }))
 }
 

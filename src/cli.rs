@@ -49,9 +49,6 @@ pub fn parse_cli_options(opts: &Options) -> Result<Command, Error> {
             }
         };
 
-        Ok(Command::Process {
-            input_path: input_path,
-            output_path: output_path,
-        })
+        Ok(Command::Process { input_path, output_path })
     }
 }

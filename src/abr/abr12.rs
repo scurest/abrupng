@@ -15,12 +15,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
                             count: u16)
                             -> Result<Decoder<R>, OpenError> {
     let cur_pos = util::tell(&mut rdr)?;
-    Ok(Decoder {
-        rdr: rdr,
-        version: version,
-        count: count,
-        next_brush_pos: cur_pos,
-    })
+    Ok(Decoder { rdr, version, count, next_brush_pos })
 }
 
 pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)
@@ -60,14 +55,14 @@ fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
     // We are now at brush_pos + 2.
     let next_brush_pos = (brush_pos + 2) + len;
 
-    Ok(BrushHeadResult { next_brush_pos: next_brush_pos })
+    Ok(BrushHeadResult { next_brush_pos })
 }
 
 /// With `dec` positioned by `do_brush_head`, reads out a brush.
 fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     let ty = dec.rdr.read_u16::<BigEndian>()?;
     if ty != 2 {
-        return Err(BrushError::UnsupportedBrushType { ty: ty });
+        return Err(BrushError::UnsupportedBrushType { ty });
     }
 
     let _misc = dec.rdr.read_u32::<BigEndian>()?;
@@ -94,7 +89,7 @@ fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, Bru
 
     let depth = dec.rdr.read_u16::<BigEndian>()?;
     if depth != 8 {
-        return Err(BrushError::UnsupportedBitDepth { depth: depth });
+        return Err(BrushError::UnsupportedBitDepth { depth });
     }
 
     let compressed = dec.rdr.read_u8()? != 0;
@@ -111,10 +106,5 @@ fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, Bru
         v
     };
 
-    Ok(ImageBrush {
-        width: width,
-        height: height,
-        depth: depth,
-        data: data,
-    })
+    Ok(ImageBrush { width, height, depth, data })
 }

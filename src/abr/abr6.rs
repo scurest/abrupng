@@ -31,13 +31,9 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, O
 
     let len = rdr.read_u32::<BigEndian>()? as u64;
     let cur = util::tell(&mut rdr)?;
+    let sample_section_end = cur + len;
 
-    Ok(Decoder {
-        rdr: rdr,
-        subversion: subversion,
-        sample_section_end: cur + len,
-        next_brush_pos: cur,
-    })
+    Ok(Decoder { rdr, subversion, sample_section_end, next_brush_pos })
 }
 
 
@@ -79,7 +75,7 @@ fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
     // Brushes are aligned to 4-byte boundaries; round up to get to one.
     let next_brush_pos = (end_pos + 3) & !3;
 
-    Ok(BrushHeadResult { next_brush_pos: next_brush_pos })
+    Ok(BrushHeadResult { next_brush_pos })
 }
 
 /// With `dec` positioned by `do_brush_head`, reads out a brush.
@@ -95,7 +91,7 @@ fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, Bru
 
     let depth = dec.rdr.read_u16::<BigEndian>()?;
     if depth != 8 {
-        return Err(BrushError::UnsupportedBitDepth { depth: depth });
+        return Err(BrushError::UnsupportedBitDepth { depth });
     }
 
     let compressed = dec.rdr.read_u8()? != 0;
@@ -112,10 +108,5 @@ fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, Bru
         v
     };
 
-    Ok(ImageBrush {
-        width: width,
-        height: height,
-        depth: depth,
-        data: data,
-    })
+    Ok(ImageBrush { width, height, depth, data })
 }
