@@ -3,14 +3,18 @@ use super::byteorder::{BigEndian, ReadBytesExt};
 use super::{ImageBrush, OpenError, BrushError};
 use super::util;
 
+/// Decoder state for ABR6-like formats (versions 6 and 10).
 pub struct Decoder<R> {
     rdr: R,
+    #[allow(dead_code)]
+    version: u16,
     subversion: u16,
     sample_section_end: u64,
     next_brush_pos: u64,
 }
 
-pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, OpenError> {
+pub fn open<R: Read + Seek>(mut rdr: R, version: u16, subversion: u16)
+                            -> Result<Decoder<R>, OpenError> {
     // Find the sample section
     loop {
         let mut buf = [0; 4];
@@ -33,7 +37,13 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, O
     let cur = util::tell(&mut rdr)?;
     let sample_section_end = cur + len;
 
-    Ok(Decoder { rdr, subversion, sample_section_end, next_brush_pos: cur })
+    Ok(Decoder {
+        rdr,
+        version,
+        subversion,
+        sample_section_end,
+        next_brush_pos: cur,
+    })
 }
 
 

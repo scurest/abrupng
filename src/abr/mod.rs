@@ -1,5 +1,5 @@
 extern crate byteorder;
-mod abr12;
+mod abr1;
 mod abr6;
 mod err;
 mod util;
@@ -7,6 +7,11 @@ mod util;
 pub use self::err::{OpenError, BrushError};
 use self::byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Read, Seek};
+
+enum Decoder<R> {
+    Abr1(abr1::Decoder<R>),
+    Abr6(abr6::Decoder<R>),
+}
 
 /// An image brush.
 #[derive(Debug)]
@@ -29,16 +34,20 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
     let version = rdr.read_u16::<BigEndian>()?;
     let subversion = rdr.read_u16::<BigEndian>()?;
 
-    Ok(Brushes(match version {
-        1 | 2 => Decoder::Abr12(abr12::open(rdr, version, subversion)?),
-        6 if subversion == 1 || subversion == 2 => Decoder::Abr6(abr6::open(rdr, subversion)?),
-        _ => return Err(OpenError::UnsupportedVersion { version, subversion }),
-    }))
-}
+    let abr1_like =
+        version == 1 || version == 2;
+    let abr6_like =
+        (version == 6 || version == 10) && (subversion == 1 || subversion == 2);
 
-enum Decoder<R> {
-    Abr12(abr12::Decoder<R>),
-    Abr6(abr6::Decoder<R>),
+    Ok(Brushes(
+        if abr1_like {
+            Decoder::Abr1(abr1::open(rdr, version, subversion)?)
+        } else if abr6_like {
+            Decoder::Abr6(abr6::open(rdr, version, subversion)?)
+        } else {
+            return Err(OpenError::UnsupportedVersion { version, subversion });
+        }
+    ))
 }
 
 impl<R: Read + Seek> Iterator for Brushes<R> {
@@ -47,7 +56,7 @@ impl<R: Read + Seek> Iterator for Brushes<R> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.0 {
             Decoder::Abr6(ref mut dec) => abr6::next_brush(dec),
-            Decoder::Abr12(ref mut dec) => abr12::next_brush(dec),
+            Decoder::Abr1(ref mut dec) => abr1::next_brush(dec),
         }
     }
 }

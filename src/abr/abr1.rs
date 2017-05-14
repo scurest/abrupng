@@ -3,6 +3,7 @@ use super::byteorder::{BigEndian, ReadBytesExt};
 use super::{ImageBrush, OpenError, BrushError};
 use super::util;
 
+/// Decoder state for ABR1-like formats (versions 1 and 2).
 pub struct Decoder<R> {
     rdr: R,
     version: u16,
