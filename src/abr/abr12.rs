@@ -15,7 +15,7 @@ pub fn open<R: Read + Seek>(mut rdr: R,
                             count: u16)
                             -> Result<Decoder<R>, OpenError> {
     let cur_pos = util::tell(&mut rdr)?;
-    Ok(Decoder { rdr, version, count, next_brush_pos })
+    Ok(Decoder { rdr, version, count, next_brush_pos: cur_pos })
 }
 
 pub fn next_brush<R: Read + Seek>(dec: &mut Decoder<R>)

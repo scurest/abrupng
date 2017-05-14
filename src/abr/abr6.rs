@@ -33,7 +33,7 @@ pub fn open<R: Read + Seek>(mut rdr: R, subversion: u16) -> Result<Decoder<R>, O
     let cur = util::tell(&mut rdr)?;
     let sample_section_end = cur + len;
 
-    Ok(Decoder { rdr, subversion, sample_section_end, next_brush_pos })
+    Ok(Decoder { rdr, subversion, sample_section_end, next_brush_pos: cur })
 }
 
 
