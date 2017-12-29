@@ -15,7 +15,6 @@ mod png;
 use err::{Error, ProcessBrushError};
 use std::fs::File;
 use std::io;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 fn main() {
@@ -67,7 +66,7 @@ fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
         let save_path = output_path.join(Path::new(&format!("{}.png", idx)));
         match process_brush(brush_result, &save_path) {
             Ok(()) => println!("Wrote {}.", save_path.display()),
-            Err(e) => writeln!(io::stderr(), "error on brush {}: {}", idx, e).unwrap(),
+            Err(e) => eprintln!("error on brush {}: {}", idx, e),
         }
     }
 
@@ -91,22 +90,23 @@ fn process_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
 /// Prints an error, plus some information for humans about what they
 /// might do about it.
 fn report_error(err: Error) {
-    let stderr = io::stderr();
-    let mut out = stderr.lock();
-
-    writeln!(out, "error: {}", err).unwrap();
+    eprintln!("error: {}", err);
 
     // Try to suggest how to fix it.
     match err {
-        Error::BadCommandlineOptions(_) | Error::WrongNumberOfInputFiles(_) =>
-            writeln!(out, "Use -h for help.").unwrap(),
-        Error::CouldntOpenAbr(_) =>
-            writeln!(out, "Ensure the provided file was an ABR. If it was, \
-                           it's unsuporrted, sorry :(").unwrap(),
+        Error::BadCommandlineOptions(_) |
+        Error::WrongNumberOfInputFiles(_) => {
+            eprintln!("Use -h for help.");
+        }
+        Error::CouldntOpenAbr(_) => {
+            eprintln!("Ensure the provided file was an ABR. If it was, \
+                       it's unsupported, sorry :-(");
+        }
         Error::CouldntCreateOutputDir { err: ref io_err, .. }
-            if io_err.kind() == io::ErrorKind::AlreadyExists =>
-            writeln!(out, "The output directory will be created. Make sure \
-                           it doesn't already exist.").unwrap(),
-        _ => (),
+            if io_err.kind() == io::ErrorKind::AlreadyExists => {
+            eprintln!("The output directory will be created. Make sure \
+                       it doesn't already exist.");
+        }
+        _ => {},
     }
 }
