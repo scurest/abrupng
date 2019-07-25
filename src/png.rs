@@ -1,6 +1,5 @@
 use err::SavePngError;
 use pnglib;
-use pnglib::HasParameters;
 use std::fs::File;
 use std::path::Path;
 
@@ -20,7 +19,8 @@ pub fn save_greyscale(path: &Path,
         16 => pnglib::BitDepth::Sixteen,
         _ => return Err(SavePngError::BadBitDepth(depth)),
     };
-    enc.set(pnglib::ColorType::Grayscale).set(bit_depth);
+    enc.set_color(pnglib::ColorType::Grayscale);
+    enc.set_depth(bit_depth);
     let mut writer = enc.write_header()?;
     writer.write_image_data(data)?;
     Ok(())
